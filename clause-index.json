@@ -1,0 +1,87 @@
+{
+  "9.22.": {
+    "date": "20240601",
+    "file": "9.22._20240601.pdf",
+    "ingredients": [
+      "IMATINIB MESYLATE 100 MG",
+      "IMATINIB MESYLATE 400 MG"
+    ],
+    "items": 17
+  },
+  "9.33.": {
+    "date": "",
+    "file": "",
+    "ingredients": [
+      "THALIDOMIDE 50 MG"
+    ],
+    "items": 4
+  },
+  "9.11.": {
+    "date": "",
+    "file": "",
+    "ingredients": [
+      "TEGAFUR (=FTORAFUR) 100 MG+URACIL 224 MG"
+    ],
+    "items": 6
+  },
+  "9.30.": {
+    "date": "20260201",
+    "file": "9.30._20260201.pdf",
+    "ingredients": [
+      "DASATINIB 20 MG",
+      "DASATINIB 50 MG",
+      "DASATINIB 70 MG"
+    ],
+    "items": 10
+  },
+  "9.32.": {
+    "date": "20240601",
+    "file": "9.32._20240601.pdf",
+    "ingredients": [
+      "NILOTINIB HYDROCHLORIDE MONOHYDRATE 150 MG",
+      "NILOTINIB HYDROCHLORIDE MONOHYDRATE 200 MG"
+    ],
+    "items": 4
+  },
+  "9.32.1.": {
+    "date": "20260201",
+    "file": "9.32.1._20260201.pdf",
+    "ingredients": [
+      "NILOTINIB HYDROCHLORIDE MONOHYDRATE 200 MG"
+    ],
+    "items": 2
+  },
+  "9.32.2.": {
+    "date": "20240601",
+    "file": "9.32.2._20240601.pdf",
+    "ingredients": [
+      "NILOTINIB HYDROCHLORIDE MONOHYDRATE 150 MG"
+    ],
+    "items": 2
+  },
+  "9.50.": {
+    "date": "20240601",
+    "file": "9.50._20240601.pdf",
+    "ingredients": [
+      "crizotinib 200 MG",
+      "crizotinib 250 MG"
+    ],
+    "items": 2
+  },
+  "9.13.": {
+    "date": "",
+    "file": "",
+    "ingredients": [
+      "ALDESLEUKIN 18 MIU/ML"
+    ],
+    "items": 2
+  },
+  "9.52.": {
+    "date": "20240601",
+    "file": "9.52._20240601.pdf",
+    "ingredients": [
+      "Vemurafenib 240 MG"
+    ],
+    "items": 1
+  }
+}
