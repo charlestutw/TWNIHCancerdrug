@@ -1,9 +1,9 @@
-name: 每月檢查健保第九節條文異動
+name: 每週檢查健保第九節條文異動
 
 on:
   schedule:
-    # 每月 5 日 01:00 UTC（台灣時間 09:00）。健保署品項檔多在月初更新。
-    - cron: "0 1 5 * *"
+    # 每週五 23:05 UTC（台灣時間週六清晨 07:05）。避開整點以減少排程延遲。
+    - cron: "5 23 * * 5"
   workflow_dispatch: {}   # 允許手動觸發
 
 permissions:
@@ -30,9 +30,9 @@ jobs:
 
       - name: 無異動則結束
         if: steps.monitor.outcome == 'success'
-        run: echo "本月無異動。"
+        run: echo "本週無異動。"
 
-      - name: 有異動 → 開 issue 通知
+      - name: 有異動 → 開 issue 或在既有 issue 留言
         if: steps.monitor.outcome == 'failure'
         uses: actions/github-script@v7
         with:
@@ -40,6 +40,41 @@ jobs:
             const fs = require('fs');
             const report = fs.readFileSync('monitor-report.txt', 'utf8');
             const today = new Date().toISOString().slice(0, 10);
+
+            const reportSection = [
+              '## 偵測報告（' + today + '）',
+              '```',
+              report.trim(),
+              '```',
+            ].join('\n');
+
+            // 防重複：先查有沒有還開著的 nhi-update issue
+            const { data: openIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'nhi-update',
+              per_page: 1,
+            });
+
+            if (openIssues.length > 0) {
+              // 已有未處理的 issue → 留言附上本次報告，不開新的
+              const issue = openIssues[0];
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: [
+                  '本週排程再次偵測到異動，前次 issue 尚未關閉，故不另開新單。',
+                  '',
+                  reportSection,
+                ].join('\n'),
+              });
+              core.info(`已在既有 issue #${issue.number} 留言。`);
+              return;
+            }
+
+            // 沒有未處理的 issue → 開新單
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -48,10 +83,7 @@ jobs:
               body: [
                 '偵測到官方條文生效日變動。**這不是自動更新** —— 需人工或 AI 判讀後修改資料。',
                 '',
-                '## 偵測報告',
-                '```',
-                report.trim(),
-                '```',
+                reportSection,
                 '',
                 '## 待辦',
                 '- [ ] 閱讀 `clause-text/` 下載的官方 PDF',
