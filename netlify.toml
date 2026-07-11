@@ -1,0 +1,10 @@
+# Netlify 設定：這是純靜態網站，不需要建置步驟
+[build]
+  publish = "."
+  command = ""
+
+# 資料檔要即時反映更新，關閉快取
+[[headers]]
+  for = "/nhi-ch9-data.json"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
