@@ -1,0 +1,76 @@
+name: 每月檢查健保第九節條文異動
+
+on:
+  schedule:
+    # 每月 5 日 01:00 UTC（台灣時間 09:00）。健保署品項檔多在月初更新。
+    - cron: "0 1 5 * *"
+  workflow_dispatch: {}   # 允許手動觸發
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"   # 需 18+（內建 fetch）
+
+      - name: 驗證現有資料仍合法
+        run: node validate-data.js nhi-ch9-data.json
+
+      - name: 偵測條文異動
+        id: monitor
+        continue-on-error: true    # 有異動時腳本回傳 1，不算 CI 失敗
+        run: node monitor-nhi.js --fetch-text | tee monitor-report.txt
+
+      - name: 無異動則結束
+        if: steps.monitor.outcome == 'success'
+        run: echo "本月無異動。"
+
+      - name: 有異動 → 開 issue 通知
+        if: steps.monitor.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('monitor-report.txt', 'utf8');
+            const today = new Date().toISOString().slice(0, 10);
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[${today}] 健保第九節條文異動，需更新 nhi-ch9-data.json`,
+              labels: ['nhi-update'],
+              body: [
+                '偵測到官方條文生效日變動。**這不是自動更新** —— 需人工或 AI 判讀後修改資料。',
+                '',
+                '## 偵測報告',
+                '```',
+                report.trim(),
+                '```',
+                '',
+                '## 待辦',
+                '- [ ] 閱讀 `clause-text/` 下載的官方 PDF',
+                '- [ ] 更新 `nhi-ch9-data.json` 對應藥品的 `ind` / `req`',
+                '- [ ] 推進 `version`（例：`2025-06b` → `2025-09`）',
+                '- [ ] `node validate-data.js nhi-ch9-data.json` 零錯誤',
+                '- [ ] `mv clause-index.json.new clause-index.json`',
+                '- [ ] commit，並同步更新 Gist 上的 JSON',
+                '',
+                '⚠ 本監測僅涵蓋開放資料中帶有 `PAY_CODE` 的條文（目前約 10 / 118 條，多為口服藥）。',
+                '注射劑與多數標靶／免疫藥品不在其中，仍須人工核對健保署公告。',
+              ].join('\n'),
+            });
+
+      - name: 保存異動快照與 PDF
+        if: steps.monitor.outcome == 'failure'
+        run: |
+          git config user.name  "nhi-monitor[bot]"
+          git config user.email "actions@github.com"
+          git add -A clause-text clause-index.json.new monitor-report.txt || true
+          git commit -m "chore: 第九節條文異動快照 $(date +%F)" || echo "無變更"
+          git push || echo "推送略過"
