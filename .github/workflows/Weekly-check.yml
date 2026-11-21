@@ -63,6 +63,21 @@ jobs:
               `官方條文 PDF 已附在 [本次執行的 artifact](${runUrl})，或在本機執行 \`node sweep-clauses.js --fetch-text\` 重新取得。`,
             ].join('\n');
 
+            // 確保 nhi-update 標籤存在：標籤不存在時開單可能失敗，
+            // 那會重現「偵測到異動卻不通知」的失效模式，故先確保一次。
+            try {
+              await github.rest.issues.getLabel({
+                owner: context.repo.owner, repo: context.repo.repo, name: 'nhi-update',
+              });
+            } catch {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner, repo: context.repo.repo,
+                name: 'nhi-update', color: 'B60205',
+                description: '健保第九節條文異動，待人工／AI 判讀更新',
+              });
+              core.info('已建立 nhi-update 標籤。');
+            }
+
             // 防重複：先查有沒有還開著的 nhi-update issue
             const { data: openIssues } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
