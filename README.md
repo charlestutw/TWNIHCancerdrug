@@ -16,11 +16,12 @@
 | `nhi-ch9-data.json` | 資料檔（單一事實來源；HTML 自動抓取此檔） |
 | `validate-data.js` | 資料驗證器，部署前必跑 |
 | `harvest-official.js` | 從健保署 API 抓取官方條文 PDF 原文 |
-| `monitor-nhi.js` | 每月偵測條文異動 |
-| `clause-index.json` | 條文生效日快照（供 monitor 比對） |
+| `sweep-clauses.js` | **每週偵測條文異動（全 144 條覆蓋）** |
+| `monitor-nhi.js` | 已淘汰：舊的 API 偵測（僅涵蓋 7%），保留供參考 |
+| `clause-index.json` | 舊 monitor 的生效日快照（已不再使用） |
 | `official-text.json` | API 抓取的官方原文快取（僅涵蓋 90 條，已被 DOCX 全量取代，保留供比對） |
 | `JSON資料維護說明.md` | **維護者必讀**：欄位定義、更新流程、已知限制 |
-| `.github/workflows/monthly-check.yml` | GitHub Actions：每月自動偵測並開 issue |
+| `.github/workflows/Weekly-check.yml` | GitHub Actions：每週五自動偵測，有異動開 issue（已有未結案則留言） |
 
 ## 資料版本
 
@@ -50,7 +51,7 @@ https://raw.githubusercontent.com/charlestutw/TWNIHCancerdrug/main/nhi-ch9-data.
 
 ```bash
 # 1. 偵測官方是否有條文異動（需要時）
-node monitor-nhi.js
+node sweep-clauses.js
 
 # 2. 抓取官方原文（可中斷續跑）
 node harvest-official.js

@@ -7,12 +7,13 @@ on:
   workflow_dispatch: {}   # 允許手動觸發
 
 permissions:
-  contents: write
+  contents: read          # 不再需要 write：改用 artifact，不把 PDF commit 進 repo
   issues: write
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -23,14 +24,25 @@ jobs:
       - name: 驗證現有資料仍合法
         run: node validate-data.js nhi-ch9-data.json
 
-      - name: 偵測條文異動
+      - name: 偵測條文異動（全 144 條覆蓋）
         id: monitor
-        continue-on-error: true    # 有異動時腳本回傳 1，不算 CI 失敗
-        run: node monitor-nhi.js --fetch-text | tee monitor-report.txt
+        shell: bash              # ← 關鍵：取得 -o pipefail，否則管線退出碼會被 tee 吃掉
+        continue-on-error: true   # 有異動時腳本回傳 1，不算 CI 失敗
+        run: node sweep-clauses.js --fetch-text | tee monitor-report.txt
 
       - name: 無異動則結束
         if: steps.monitor.outcome == 'success'
         run: echo "本週無異動。"
+
+      - name: 上傳異動條文的官方 PDF
+        if: steps.monitor.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: clause-pdf-${{ github.run_number }}
+          path: |
+            clause-text/
+            monitor-report.txt
+          retention-days: 90
 
       - name: 有異動 → 開 issue 或在既有 issue 留言
         if: steps.monitor.outcome == 'failure'
@@ -40,12 +52,15 @@ jobs:
             const fs = require('fs');
             const report = fs.readFileSync('monitor-report.txt', 'utf8');
             const today = new Date().toISOString().slice(0, 10);
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
             const reportSection = [
               '## 偵測報告（' + today + '）',
               '```',
               report.trim(),
               '```',
+              '',
+              `官方條文 PDF 已附在 [本次執行的 artifact](${runUrl})，或在本機執行 \`node sweep-clauses.js --fetch-text\` 重新取得。`,
             ].join('\n');
 
             // 防重複：先查有沒有還開著的 nhi-update issue
@@ -81,28 +96,19 @@ jobs:
               title: `[${today}] 健保第九節條文異動，需更新 nhi-ch9-data.json`,
               labels: ['nhi-update'],
               body: [
-                '偵測到官方條文生效日變動。**這不是自動更新** —— 需人工或 AI 判讀後修改資料。',
+                '偵測到官方條文生效日變動。**這不是自動更新** —— 需人工或 AI 判讀官方原文後修改資料。',
                 '',
                 reportSection,
                 '',
                 '## 待辦',
-                '- [ ] 閱讀 `clause-text/` 下載的官方 PDF',
-                '- [ ] 更新 `nhi-ch9-data.json` 對應藥品的 `ind` / `req`',
-                '- [ ] 推進 `version`（例：`2025-06b` → `2025-09`）',
+                '- [ ] 閱讀 artifact 內的官方 PDF',
+                '- [ ] 更新 `nhi-ch9-data.json` 對應條文的 `ind` / `eff` / `src` / `req`（逐字原文，不得濃縮）',
+                '- [ ] 新條文另需補 `name` / `brand` / `type` / `cancers`',
+                '- [ ] 推進 `version`（例：`2026-11` → `2026-12`）',
+                '- [ ] 同步兩個 HTML 的 `EMBEDDED_SEED`',
                 '- [ ] `node validate-data.js nhi-ch9-data.json` 零錯誤',
-                '- [ ] `mv clause-index.json.new clause-index.json`',
-                '- [ ] commit，並同步更新 Gist 上的 JSON',
+                '- [ ] commit + push 到 `main`（raw 網址即為 App 的自動更新來源）',
                 '',
-                '⚠ 本監測僅涵蓋開放資料中帶有 `PAY_CODE` 的條文（目前約 10 / 118 條，多為口服藥）。',
-                '注射劑與多數標靶／免疫藥品不在其中，仍須人工核對健保署公告。',
+                '詳細欄位定義與更新流程見 `JSON資料維護說明.md`。',
               ].join('\n'),
             });
-
-      - name: 保存異動快照與 PDF
-        if: steps.monitor.outcome == 'failure'
-        run: |
-          git config user.name  "nhi-monitor[bot]"
-          git config user.email "actions@github.com"
-          git add -A clause-text clause-index.json.new monitor-report.txt || true
-          git commit -m "chore: 第九節條文異動快照 $(date +%F)" || echo "無變更"
-          git push || echo "推送略過"

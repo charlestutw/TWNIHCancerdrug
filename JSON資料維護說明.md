@@ -239,29 +239,37 @@ node validate-data.js nhi-ch9-data.json   ← 通過才繼續
 
 ---
 
-## 9. 每月更新流程（半自動）
+## 9. 每週更新流程（半自動）
 
 ### 能自動的：偵測「哪一條被改了」
 
-健保署有開放資料 REST API（免金鑰、每月更新）。每個給付規定條文對應一份官方 PDF，**檔名內含生效日期**，例如 `9.22._20240601.pdf`。生效日一變，就代表該條文被修訂。
+每個給付規定條文對應一份官方 PDF，**檔名內含生效日期**，例如 `9.22._20240601.pdf`，且生效日一律為某月 1 日。生效日一變，就代表該條文被修訂。
 
-- `monitor-nhi.js` — 抓品項表 → 取出第九節條文與生效日 → 與 `clause-index.json` 快照比對 → 報出**修訂／新增／消失**
-- `monthly-check.yml` — GitHub Actions，每月 5 日執行；有異動就自動開 issue、附報告，並把官方 PDF commit 進 `clause-text/`
+- `sweep-clauses.js` — **全 144 條覆蓋**。直接向條文 PDF 端點探測是否存在比現有 `eff` 更新的版本，並探測編號更大的全新條文
+- `.github/workflows/Weekly-check.yml` — GitHub Actions，每週五 23:05 UTC（台灣週六 07:05）執行；有異動就開 issue（已有未結案的則留言），官方 PDF 以 artifact 保存 90 天
 
 ```bash
-node monitor-nhi.js --init        # 首次建立快照
-node monitor-nhi.js               # 比對（有異動時退出碼 1）
-node monitor-nhi.js --fetch-text  # 順便下載異動條文 PDF
+node sweep-clauses.js               # 比對（有異動時退出碼 1）
+node sweep-clauses.js --fetch-text  # 另把異動條文 PDF 存到 clause-text/
 ```
 
-### ⚠️ 覆蓋率限制：只有 10 / 118 條
+比對基準是 `nhi-ch9-data.json` 各條的 `eff`（單一事實來源，不需另存快照）。
+探測視窗 = [`version` 的月份, 今天+3 個月]，故視窗隨每次更新自動收斂；實測全掃約 25 秒。
 
-開放資料的品項表**只涵蓋部分口服藥**。實測 `Osimertinib`、`Trastuzumab`、`Pembrolizumab`、`Olaparib`、`Docetaxel`、`Bevacizumab` 等**皆不在資料集內**。
+### ⚠️ 兩個已知限制
 
-目前可自動監測的條文僅：
-`9.11. 9.13. 9.22. 9.30. 9.32. 9.32.1. 9.32.2. 9.33. 9.50. 9.52.`
+1. **`9.6 Streptococcus pyrogene` 無生效日基準**（官方原文標題未標日期），不納入自動比對，需人工留意。
+2. **偵測的是「生效日變動」，不是內容雜湊**。若官方修改條文內容卻未更動生效日，本機制抓不到。
 
-**其餘 108 條（含絕大多數標靶、免疫、注射劑）仍須人工核對健保署公告。** 這是資料源的極限，不是腳本缺陷。
+### 🗄️ 已淘汰：`monitor-nhi.js`（保留供參考）
+
+原本靠開放資料 API 的 `PAY_CODE` 欄位比對 `clause-index.json`。實測**只涵蓋 144 條中的 10 條（約 7%）**
+（`9.11. 9.13. 9.22. 9.30. 9.32. 9.32.1. 9.32.2. 9.33. 9.50. 9.52.`），
+115/9～10 月那一輪的 11 條真實異動**一條都沒抓到**。已由 `sweep-clauses.js` 取代，檔案保留僅供了解 API 行為。
+
+> **教訓（兩個都踩過）**
+> 1. `run: cmd | tee file` 在 GitHub Actions 預設 shell（`bash -e`，**無** `pipefail`）下，退出碼會被 `tee` 吃掉而永遠是 0，使 `continue-on-error` 的 `outcome` 永遠是 `success`、通知步驟永不執行。必須加 `shell: bash`（＝`-eo pipefail`）。
+> 2. 監測機制要先驗證「能不能抓到已知的真實異動」，否則綠勾只代表腳本跑完，不代表有在監測。
 
 ### 不能自動的：內容改寫
 
@@ -270,7 +278,7 @@ node monitor-nhi.js --fetch-text  # 順便下載異動條文 PDF
 ### 實際流程
 
 ```
-GitHub Actions 每月執行
+GitHub Actions 每週執行
    ↓ 偵測到 9.xx 生效日變動
 自動開 issue，附官方 PDF
    ↓
@@ -278,9 +286,9 @@ GitHub Actions 每月執行
    ↓
 推進 version → node validate-data.js（必須零錯誤）
    ↓
-mv clause-index.json.new clause-index.json → commit
+同步兩個 HTML 的 EMBEDDED_SEED → commit
    ↓
-上傳覆蓋 Gist → 所有裝置自動同步
+push 到 main → 所有裝置自動同步
 ```
 
 ### 條文異動修正紀錄
