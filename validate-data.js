@@ -151,8 +151,9 @@ data.drugs.forEach((d, i) => {
   if (typeof d.verbatim !== "boolean") {
     E(`${at}: verbatim 必須是 true/false`);
   } else if (d.verbatim) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(d.eff || "")) E(`${at}: verbatim 條文的 eff 應為 YYYY-MM-DD（目前 "${d.eff}"）`);
-    if (!/\.pdf$/.test(d.src || "")) E(`${at}: verbatim 條文的 src 應為官方 PDF 檔名（目前 "${d.src}"）`);
+    if (d.eff && !/^\d{4}-\d{2}-\d{2}$/.test(d.eff)) E(`${at}: verbatim 條文的 eff 應為 YYYY-MM-DD 或空字串（目前 "${d.eff}"）`);
+    if (!d.eff) W(`${at}: verbatim 條文無生效日（官方原文標題未標日期，可接受）`);
+    if (!/\.(pdf|docx)$|cp-\d+/.test(d.src || "")) E(`${at}: verbatim 條文的 src 應為官方 PDF/DOCX 檔名或公告編號 cp-xxxxx（目前 "${d.src}"）`);
     // 子條文的 PDF 常含上層標題（如 9.5.2 的檔案以 "9.5." 開頭），故只要文中出現該條文代碼即可
     if (!String(d.ind).includes(d.id)) W(`${at}: 官方原文未出現條文代碼 ${d.id}，請確認抓到正確 PDF`);
   } else {
