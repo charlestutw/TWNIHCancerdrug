@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>健保第九節抗癌藥物速查表</title>
+<link rel="stylesheet" href="panel.css">
+</head>
+<body>
+
+<div id="hdr">
+  <div class="eyebrow">全民健康保險藥品給付規定</div>
+  <h1>第九節 抗癌瘤藥物速查表</h1>
+  <div class="sub" id="meta-sub">Antineoplastic Drugs · 載入中…</div>
+  <div class="author">杜奕德醫師 編製</div>
+</div>
+<div id="ctrl">
+  <input id="search" type="search" placeholder="全文搜尋：藥名、癌別、適應症、條文號碼…" autocomplete="off" autocorrect="off" spellcheck="false">
+  <div id="mode-row">
+    <button class="mode-btn active" type="button" data-mode="full">全文搜尋</button>
+    <button class="mode-btn" type="button" data-mode="name">精確搜尋（藥名）</button>
+    <span id="mode-hint">搜尋藥名、商品名、癌別、適應症、條文號碼</span>
+  </div>
+  <div class="chip-row" id="group-chips"></div>
+  <div class="chip-row" id="type-chips"></div>
+  <div id="count"></div>
+  <div id="upd-row">
+    <button id="upd-btn" type="button">檢查更新</button>
+    <button id="tab-btn" type="button">在新分頁開啟</button>
+    <span id="upd-status"></span>
+  </div>
+</div>
+<div id="list"></div>
+<div id="footer">
+  資料來源：<span id="footer-src">衛生福利部中央健康保險署 · 藥品給付規定第九節</span><br>
+  本速查表僅供參考，最終給付認定以健保署公告為準
+</div>
+
+<script src="panel.js"></script>
+</body>
+</html>

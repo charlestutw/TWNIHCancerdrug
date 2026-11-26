@@ -20,6 +20,8 @@
 | `monitor-nhi.js` | 已淘汰：舊的 API 偵測（僅涵蓋 7%），保留供參考 |
 | `clause-index.json` | 舊 monitor 的生效日快照（已不再使用） |
 | `official-text.json` | API 抓取的官方原文快取（僅涵蓋 90 條，已被 DOCX 全量取代，保留供比對） |
+| `chrome-extension/` | **Chrome 擴充功能**（側邊欄常駐版） |
+| `build-extension.js` | 由 `nhi-ch9-data.json` 產生擴充功能的 data.json 與版本號 |
 | `JSON資料維護說明.md` | **維護者必讀**：欄位定義、更新流程、已知限制 |
 | `.github/workflows/Weekly-check.yml` | GitHub Actions：每週五自動偵測，有異動開 issue（已有未結案則留言） |
 
@@ -34,6 +36,24 @@
 1. 下載 `健保第九節抗癌藥物速查表.html` 到手機
 2. Safari 開啟 → 分享 → **加入主畫面**
 3. 之後每次開啟會自動抓取本 repo 最新的 `nhi-ch9-data.json`；離線時使用內建/快取資料
+
+## Chrome 擴充功能（側邊欄）
+
+`chrome-extension/` 是同一套速查表的 Chrome 版，點工具列圖示會在右側開啟**側邊欄**，可邊看其他系統邊查；也可切換成全頁分頁。
+
+安裝：解壓／取得資料夾後 → `chrome://extensions` → 開啟開發人員模式 → **載入未封裝項目** → 選 `chrome-extension/`。
+詳見 `chrome-extension/安裝說明.md`。需 Chrome 114 以上。
+
+權限只有 `storage`、`sidePanel` 與 `raw.githubusercontent.com`，不讀取任何網頁內容。
+
+> ⚠️ `chrome-extension/data.json` 是 `nhi-ch9-data.json` 的複本（擴充功能需自帶離線資料），
+> **不要手改**：一律執行 `node build-extension.js` 同步。
+> `validate-data.js` 會在兩者不一致時直接報錯，避免悄悄漂移。
+
+```bash
+node build-extension.js          # 同步資料與 manifest 版本號
+node build-extension.js --zip    # 另外打包成 zip
+```
 
 ## 自動更新原理
 

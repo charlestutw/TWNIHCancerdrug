@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "健保第九節抗癌藥物速查表",
+  "short_name": "第九節速查",
+  "version": "2026.11.0",
+  "description": "全民健保藥品給付規定第九節（抗癌瘤藥物）官方條文速查。側邊欄常駐、離線可用、自動更新。",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "開啟第九節抗癌藥物速查表"
+  },
+  "permissions": [
+    "storage",
+    "sidePanel"
+  ],
+  "host_permissions": [
+    "https://raw.githubusercontent.com/*"
+  ],
+  "side_panel": {
+    "default_path": "panel.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

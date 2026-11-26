@@ -181,6 +181,19 @@ data.drugs.forEach((d, i) => {
   W(`分群中的 "${c}" 在資料裡沒有任何藥品使用（幽靈標籤）`);
 });
 
+// ---- Chrome 擴充功能的資料複本不得漂移 ----
+const extPath = __dirname + "/chrome-extension/data.json";
+if (fs.existsSync(extPath)) {
+  try {
+    const ext = JSON.parse(fs.readFileSync(extPath, "utf8"));
+    if (JSON.stringify(ext) !== JSON.stringify(data)) {
+      E('chrome-extension/data.json 與 nhi-ch9-data.json 不一致 — 請執行 `node build-extension.js` 重新同步');
+    }
+  } catch (e) {
+    E(`chrome-extension/data.json 無法解析：${e.message}`);
+  }
+}
+
 report();
 
 function report() {

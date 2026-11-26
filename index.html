@@ -88,8 +88,7 @@ mark{background:#FFE9A8;color:#1B2F5B;border-radius:2px;padding:0 1px}
 <div id="list"></div>
 
 <div id="footer">
-  資料來源：衛生福利部中央健康保險署<br>
-  藥品給付規定第九節（含至115年6月修訂版）<br>
+  資料來源：<span id="footer-src">衛生福利部中央健康保險署 · 藥品給付規定第九節</span><br>
   本速查表僅供參考，最終給付認定以健保署公告為準
 </div>
 
@@ -308,6 +307,8 @@ function updateMeta(){
   const srcName = {seed:"內建", cache:"雲端快取", remote:"雲端最新"}[META.src] || "內建";
   const sub = document.getElementById("meta-sub");
   if(sub) sub.textContent = "Antineoplastic Drugs · " + (META.updated||"") + "（資料版本 "+(META.version||"—")+" · "+srcName+"）";
+  const ft = document.getElementById("footer-src");
+  if(ft && META.source) ft.textContent = META.source;   // 頁尾來源由資料帶出，避免寫死而過期
 }
 function setStatus(msg){ const s=document.getElementById("upd-status"); if(s) s.textContent=msg; }
 
